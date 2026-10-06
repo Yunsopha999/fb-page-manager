@@ -1,69 +1,97 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
 
 export default function Home() {
+  const [token, setToken] = useState('');
+  const [pages, setPages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // មុខងារទាញយកបញ្ជី Page ពី Backend API របស់យើង
+  const fetchFacebookPages = async (userAccessToken) => {
+    if (!userAccessToken) {
+      setError('សូមបញ្ចូល Access Token ជាមុនសិន!');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/pages?access_token=${userAccessToken}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setPages(data.pages);
+      } else {
+        setError(data.error || 'Failed to fetch pages');
+      }
+    } catch (err) {
+      setError('មានបញ្ហាក្នុងការទាក់ទងទៅកាន់ Server!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Facebook Page Manager App</h1>
+        
+        {/* Input សម្រាប់ដាក់ User Access Token ដែលបានពី Meta Graph API Explorer */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Facebook User Access Token:
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="បិទភ្ជាប់ Access Token ទីនេះ..."
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={() => fetchFacebookPages(token)}
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 font-medium"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              ទាញយក Page
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            ចំណាំ៖ អ្នកអាចយក Token ដែលបាន Copy ពី Graph API Explorer មកដាក់ទីនេះ។
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* បង្ហាញ Loading ឬ Error */}
+        {loading && <p className="text-blue-600">កំពុងទាញយកទិន្នន័យ...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+
+        {/* បង្ហាញបញ្ជី Page ដែលទាញបាន */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">បញ្ជី Facebook Pages របស់អ្នក៖</h2>
+          {pages.length === 0 ? (
+            <p className="text-gray-400">គ្មាន Page ត្រូវបង្ហាញទេ (សូមបញ្ចូល Token រួចចុចទាញយក)</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {pages.map((page) => (
+                <div key={page.id} className="border border-gray-200 p-4 rounded-lg flex justify-between items-center bg-gray-50">
+                  <div>
+                    <h3 className="font-bold text-gray-800">{page.name}</h3>
+                    <p className="text-xs text-gray-500">ID: {page.id}</p>
+                  </div>
+                  <button 
+                    onClick={() => alert(`បានជ្រើសរើស Page: ${page.name}\nPage Token: ${page.access_token}`)}
+                    className="bg-green-600 text-white px-4 py-1.5 rounded-md text-sm hover:bg-green-700"
+                  >
+                    គ្រប់គ្រងផេកនេះ
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
